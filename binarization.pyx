@@ -111,6 +111,11 @@ cdef main_c():
                 if newimage[i,j][0] == k_threshed:
                     newimage[i,j] = black_white_or_undecided(get_around(newimage, image[i,j][0], i, j), kw, kb, k_threshed, wh_min, bk_max)
 
+    for i in range(1, image.shape[0]-1):
+        for j in range(1, image.shape[1]-1):
+            if newimage[i,j][0] == k_threshed:
+                newimage[i,j] = bk_max
+
     cv2.imwrite(outfile, newimage)
 
     cv2.imshow(u'test', newimage)
