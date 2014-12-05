@@ -26,13 +26,13 @@ cdef float get_around(np.ndarray[DTYPE_t, ndim=3] ar, np.uint8_t my, size_t i, s
 
     return (score*(over/(4.0/1.4142+4.0)) + my)/ (over+1.0)
 
-cdef np.uint8_t black_white_or_undecided(float i, float kw, float kb, np.uint8_t threshed):
-    return 255 if i>kw else 0 if i<kb else threshed
+cdef np.uint8_t black_white_or_undecided(float i, float kw, float kb, np.uint8_t threshed, np.uint8_t wh_min, np.uint8_t bk_max):
+    return wh_min if i>kw else bk_max if i<kb else threshed
 
 # 未定の閾値を狭めてくべき
 
-#cdef unsigned char black_or_white(float i):
-#    return 255 if i>127 else 0
+#cdef unsigned char black_or_white(float i, np.uint8_t threshed, np.uint8_t wh_min, np.uint8_t bk_max):
+#    return wh_min if i>threshed else bk_max
 
 # 0 = black, 255 = white, 127 = undecided
 
@@ -99,7 +99,7 @@ cdef main_c():
 
     for i in range(1, image.shape[0]-1):
         for j in range(1, image.shape[1]-1):
-            newimage[i,j] = black_white_or_undecided(image[i,j][0], kw, kb, k_threshed)
+            newimage[i,j] = black_white_or_undecided(image[i,j][0], kw, kb, k_threshed, wh_min, bk_max)
 
     cdef float k
     for k in range(1, mk):
@@ -109,7 +109,7 @@ cdef main_c():
         for i in range(1, image.shape[0]-1):
             for j in range(1, image.shape[1]-1):
                 if newimage[i,j][0] == k_threshed:
-                    newimage[i,j] = black_white_or_undecided(get_around(newimage, image[i,j][0], i, j), kw, kb, k_threshed)
+                    newimage[i,j] = black_white_or_undecided(get_around(newimage, image[i,j][0], i, j), kw, kb, k_threshed, wh_min, bk_max)
 
     cv2.imwrite(outfile, newimage)
 
