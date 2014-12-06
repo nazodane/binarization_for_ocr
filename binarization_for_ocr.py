@@ -22,16 +22,23 @@ def main():
     # cdef unicode
     outfile = sys.argv[2]
 
-    # cdef np.ndarray[DTYPE_t, ndim=2]
-    image = cv2.imread(filename, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+    image_color = cv2.imread(filename, cv2.CV_LOAD_IMAGE_COLOR)
 
-    if image is None:
+    if image_color is None:
         print "input file is not found"
         quit()
 
-    process(image, outfile, True)
+    # cdef np.ndarray[DTYPE_t, ndim=2]
+    image = np.zeros([image_color.shape[0], image_color.shape[1] ], dtype=np.uint8)
 
-def process(image, outfile, retry):
+    # drop blue channel for yellowish books
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            image[i,j] = (int(image_color[i,j][1]) + image_color[i,j][2])>>1 # 0.662 * image_color[i,j][1] + 0.337 * image_color[i,j][2]
+    process(image, outfile, False, 3)
+    quit()
+
+def process(image, outfile, retry, kn):
     # cdef np.ndarray[DTYPE_t, ndim=2]
     mask = np.zeros([image.shape[0], image.shape[1] ], dtype=np.uint8)
 
@@ -50,7 +57,7 @@ def process(image, outfile, retry):
 
     #cdef np.ndarray[np.float32_t, ndim=2] centers
 
-    _,cluster_idx,centers = cv2.kmeans(points, 3, (cv2.cv.CV_TERMCRIT_ITER | cv2.cv.CV_TERMCRIT_EPS, 10, 1.0), 1, cv2.KMEANS_PP_CENTERS)
+    _,cluster_idx,centers = cv2.kmeans(points, kn, (cv2.cv.CV_TERMCRIT_ITER | cv2.cv.CV_TERMCRIT_EPS, 10, 1.0), 1, cv2.KMEANS_PP_CENTERS)
 
     #cdef size_t
     wi = 0
@@ -66,28 +73,9 @@ def process(image, outfile, retry):
                 image[i, j] = 255
             x += 1
 
-    image = cv2.fastNlMeansDenoising(image, 100, 7, 21)
+#    image = cv2.fastNlMeansDenoising(image, 100, 7, 21)
 
     img_bw = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 3)
-
-    if retry:
-        contours, hierarchy = cv2.findContours(np.copy(img_bw), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-        maxc = None
-        maxsz = image.shape[0]*image.shape[1]
-        pghalf = (image.shape[0]*image.shape[1])/2
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > pghalf and area < maxsz:
-                maxsz = area
-                maxc = contour
-        if maxc is not None:
-            cv2.drawContours(mask, [maxc], 0, 255,-1)
-            for i in range(0, image.shape[0]):
-                for j in range(0, image.shape[1]):
-                    if mask[i,j] != 255:
-                        image[i,j] = 255
-            process(image, outfile, False)
-            quit()
 
     cv2.imwrite(outfile, img_bw)
 
