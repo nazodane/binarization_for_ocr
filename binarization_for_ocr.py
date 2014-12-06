@@ -15,7 +15,7 @@ if 1:
 #cdef c_main():
 
     if len(sys.argv) != 3:
-        print "./binarization_for_ocr <in_file> <out_file>"
+        print "./binarization_for_ocr.py <in_file> <out_file>"
         quit()
 
     # cdef unicode
