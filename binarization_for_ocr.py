@@ -66,6 +66,8 @@ def process(image, outfile, retry):
                 image[i, j] = 255
             x += 1
 
+    image = cv2.fastNlMeansDenoising(image, 100, 7, 21)
+
     img_bw = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 3)
 
     if retry:
