@@ -8,8 +8,7 @@ import numpy as np
 # cimport numpy as np
 import math
 
-if 1:
-#def main():
+def main():
 #    c_main()
 
 #cdef c_main():
@@ -91,3 +90,4 @@ def process(image, outfile, retry):
 
     cv2.imwrite(outfile, img_bw)
 
+main()
