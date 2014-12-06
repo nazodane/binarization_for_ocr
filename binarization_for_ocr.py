@@ -69,18 +69,17 @@ def process(image, outfile, retry):
     img_bw = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 7, 3)
 
     if retry:
-        contours, hierarchy = cv2.findContours(np.copy(img_bw), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(np.copy(img_bw), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         maxc = None
         maxsz = image.shape[0]*image.shape[1]
         pghalf = (image.shape[0]*image.shape[1])/2
         for contour in contours:
-            x,y,w,h = cv2.boundingRect(contour)
-            if w*h > pghalf and w*h < maxsz:
-                maxsz = w*h
+            area = cv2.contourArea(contour)
+            if area > pghalf and area < maxsz:
+                maxsz = area
                 maxc = contour
         if maxc is not None:
-            x,y,w,h = cv2.boundingRect(maxc)
-            cv2.rectangle(mask,(x,y),(x+w,y+h),255,-1)
+            cv2.drawContours(mask, [maxc], 0, 255,-1)
             for i in range(0, image.shape[0]):
                 for j in range(0, image.shape[1]):
                     if mask[i,j] != 255:
