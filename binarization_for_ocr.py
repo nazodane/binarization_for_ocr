@@ -29,9 +29,9 @@ def main():
         print "input file is not found"
         quit()
 
-    process(image, outfile, True)
+    process(image, outfile, True, 3)
 
-def process(image, outfile, retry):
+def process(image, outfile, retry, kn):
     # cdef np.ndarray[DTYPE_t, ndim=2]
     mask = np.zeros([image.shape[0], image.shape[1] ], dtype=np.uint8)
 
@@ -50,7 +50,7 @@ def process(image, outfile, retry):
 
     #cdef np.ndarray[np.float32_t, ndim=2] centers
 
-    _,cluster_idx,centers = cv2.kmeans(points, 3, (cv2.cv.CV_TERMCRIT_ITER | cv2.cv.CV_TERMCRIT_EPS, 10, 1.0), 1, cv2.KMEANS_PP_CENTERS)
+    _,cluster_idx,centers = cv2.kmeans(points, kn, (cv2.cv.CV_TERMCRIT_ITER | cv2.cv.CV_TERMCRIT_EPS, 10, 1.0), 1, cv2.KMEANS_PP_CENTERS)
 
     #cdef size_t
     wi = 0
@@ -94,7 +94,7 @@ def process(image, outfile, retry):
                 for j in range(0, image.shape[1]):
                     if mask[i,j] != 255:
                         image[i,j] = 255
-            process(image, outfile, False)
+            process(image, outfile, False, 2)
             quit()
 
     cv2.imwrite(outfile, img_bw)
