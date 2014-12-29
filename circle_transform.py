@@ -41,26 +41,27 @@ def main():
             continue
         y = -c1
         for j in range(0, image.shape[1]):
-            if y == 0:
-                y += 1
-                continue
-#            circle[i,j,0] = 1.0 - math.sqrt(x**2 + y**2) / math.sqrt(min(c0**2 + ((x/y)*c0)**2, c1**2 + (c1/(x/y))**2))
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min(c0**2 + ((x/y)*c0)**2, c1**2 + (c1/(x/y))**2))
+#            if y == 0:
+#                y += 1
+#                continue
 
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min((c0*y/y)**2 + ((x/y)*c0)**2, (c1*x/x)**2 + (c1*y/x))**2))
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min((y**2 + x**2) * (c0**2) / (y**2), (x**2 + y**2) * (c1**2) / (x**2)))
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / (x**2 + y**2) / min((c0**2) / (y**2),  (c1**2) / (x**2)))
-#            circle[i,j,0] = 1.0 - math.sqrt(max((y**2)/(c0**2),  (x**2)/(c1**2)))
+#            circle[i,j,0] = 1.0 - math.sqrt(x**2 + y**2) / math.sqrt(min(c0**2 + ((y/x)*c0)**2, c1**2 + (c1/(y/x))**2))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min(c0**2 + ((y/x)*c0)**2, c1**2 + (c1/(y/x))**2))
 
-            circle[i,j,0] = 1.0 - max(abs(y/c0),  abs(x/c1))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min((c0*x/x)**2 + ((y/x)*c0)**2, (c1*y/y)**2 + (c1*x/y))**2))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / min((y**2 + x**2) * (c0**2) / (x**2), (x**2 + y**2) * (c1**2) / (y**2)))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) / (x**2 + y**2) / min((c0**2) / (x**2),  (c1**2) / (y**2)))
+#            circle[i,j,0] = 1.0 - math.sqrt(max((x**2)/(c0**2),  (y**2)/(c1**2)))
+
+            circle[i,j,0] = 1.0 - max(abs(x/c0),  abs(y/c1))
 
 # funny bug!
-#            circle[i,j,0] = 1.0 - max(y/c0,  x/c1)
+#            circle[i,j,0] = 1.0 - max(x/c0,  y/c1)
 
 
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) * max(1.0 / (c0**2 + ((x/y)*c0)**2), 1.0/(c1**2 + (c1/(x/y))**2)))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) * max(1.0 / (c0**2 + ((y/x)*c0)**2), 1.0/(c1**2 + (c1/(y/x))**2)))
 # funny bug!
-#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) * min(1.0 / (c0**2 + ((x/y)*c0)**2), 1.0/(c1**2 + (c1/(x/y))**2)))
+#            circle[i,j,0] = 1.0 - math.sqrt((x**2 + y**2) * min(1.0 / (c0**2 + ((y/x)*c0)**2), 1.0/(c1**2 + (c1/(y/x))**2)))
             circle[i,j,1] = math.atan2(y, x)
             y += 1
         x += 1
