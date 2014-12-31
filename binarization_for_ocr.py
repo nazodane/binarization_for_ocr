@@ -57,7 +57,7 @@ def process(image, img_diff, outfile, retry, kn):
     mask = np.zeros([image.shape[0], image.shape[1] ], dtype=np.uint8)
 
     # cdef np.ndarray[np.int32_t, ndim=2]
-    cluster_idx = np.zeros([image.shape[0] * image.shape[1] , 2], dtype=np.int32) # / 128 +1
+    cluster_idx = np.zeros([image.shape[0] * image.shape[1] , 1], dtype=np.int32) # / 128 +1
 
     # cdef size_t
     i, j, x = 0, 0, 0
@@ -68,22 +68,72 @@ def process(image, img_diff, outfile, retry, kn):
     c1 = image.shape[1]/2.0
 
     ax = np.arange(-c0,image.shape[0]-c0, dtype=np.float32)
-    ax = np.absolute(ax / c0)
+    ax = np.uint8(np.absolute(ax / c0) * 255.0)
 
     ay = np.arange(-c1,image.shape[1]-c1, dtype=np.float32)
-    ay = np.absolute(ay / c1)
+    ay = np.uint8(np.absolute(ay / c1) * 255.0)
 
     ax = np.repeat(ax, image.shape[1])
     ay = np.tile(ay, image.shape[0])
-    points = 1.0 - np.maximum(ax, ay)
 
-    points = np.dstack((img_diff.flat, points))[0]
+    points = 255 - np.maximum(ax, ay)
+
+    sz = 256
+
+    df_flat = img_diff.flat
+
+    grid = np.zeros([sz, sz], dtype=np.uint8)
+#    grid = np.zeros([256, 256], dtype=np.uint32)
+    for i in range(0, points.shape[0]):
+        if grid[points[i], df_flat[i]] != 255: grid[points[i], df_flat[i]] += 1
+        # dither-aware (+0, +1 or -1)
+#        if df_flat[i] != 255:
+#            if grid[points[i], df_flat[i] + 1] != 255: grid[points[i], df_flat[i] + 1] += 1
+#        if df_flat[i] != 0:
+#            if grid[points[i], df_flat[i] - 1] != 255: grid[points[i], df_flat[i] - 1] += 1
+
+    cv2.imwrite("%s_grid.png"%outfile, grid)
+
+#    center = 127 # XXX
+
+    grid_cluster_idx = np.zeros([image.shape[0] * image.shape[1] , 2], dtype=np.int32) # / 128 +1
+    _,grid_cluster_idx,centers = cv2.kmeans(np.float32(grid.flat), 2, grid_cluster_idx, (cv2.TERM_CRITERIA_MAX_ITER | cv2.TERM_CRITERIA_EPS, 10, 1.0), 3, cv2.KMEANS_PP_CENTERS)
+
+    wi = 0 if centers[0][0] > centers[1][0] else 1
+    grid_m = np.ma.array(np.copy(grid), mask=(grid_cluster_idx != wi))
+    center = np.ma.min(grid_m)
+    print (center)
+
+    _, grid_mask = cv2.threshold(np.uint8(grid), center, 255, cv2.THRESH_BINARY)
+
+#    grid_mask = cv2.fastNlMeansDenoising(grid_mask, 100, 7, 21) ###
+
+    cv2.imwrite("%s_grid_mask.png"%outfile, grid_mask)
+
+    points_n = np.reshape(points, (image.shape[0], image.shape[1]))
+
+
+
+    for i in range(0, image.shape[0]):
+        for j in range(0, image.shape[1]):
+            if grid_mask[points_n[i, j], img_diff[i, j]] != 0:
+                image[i, j] = 255
+
+    cv2.imwrite("%s_gridded.png"%outfile, image)
+#    quit()
+
+
+
+
+#    points = np.dstack((img_diff.flat, points))[0]
+
+
 
 #    points = points[0:x]
 
     #cdef np.ndarray[np.float32_t, ndim=2] centers
 
-    _,cluster_idx,centers = cv2.kmeans(points, kn, cluster_idx, (cv2.TERM_CRITERIA_MAX_ITER | cv2.TERM_CRITERIA_EPS, 10, 1.0), 3, cv2.KMEANS_PP_CENTERS)
+#    _,cluster_idx,centers = cv2.kmeans(points, kn, cluster_idx, (cv2.TERM_CRITERIA_MAX_ITER | cv2.TERM_CRITERIA_EPS, 10, 1.0), 3, cv2.KMEANS_PP_CENTERS)
 
 # memory problem
 #    from sklearn.cluster import SpectralClustering, spectral_clustering
@@ -134,19 +184,24 @@ def process(image, img_diff, outfile, retry, kn):
     wi = 0
     ei = 0
 
+    _,cluster_idx,centers = cv2.kmeans(np.float32(image.flat), 2, cluster_idx, (cv2.TERM_CRITERIA_MAX_ITER | cv2.TERM_CRITERIA_EPS, 10, 1.0), 3, cv2.KMEANS_PP_CENTERS)
+
+
     for i in range(1, centers.shape[0]):
         if centers[i][0] > centers[wi][0]: # white
             wi = i
-        if centers[i][1] < centers[ei][1]: # most center
-            ei = i
 
-    image_m = np.ma.array(np.copy(image), mask=(np.reshape(cluster_idx, (image.shape[0], image.shape[1])) == ei))
+    image_m = np.ma.array(np.copy(image), mask=(np.reshape(cluster_idx, (image.shape[0], image.shape[1])) != wi))
+    center = np.ma.min(image_m)
+    print (center)
+
+    image_m = np.ma.array(np.copy(image), mask=(np.reshape(cluster_idx, (image.shape[0], image.shape[1])) == wi))
     image = np.ma.filled(image_m, 255)
 
-    cmap = clr.ListedColormap(['r', 'g', 'b'], 3)
-    plt.scatter(points[:,0], points[:,1], c=cluster_idx, cmap = cmap)
-    plt.xlabel('Color'),plt.ylabel('Distance')
-    plt.show()
+#    cmap = clr.ListedColormap(['r', 'g', 'b'], 3)
+#    plt.scatter(points[:,0], points[:,1], c=cluster_idx, cmap = cmap)
+#    plt.xlabel('Color'),plt.ylabel('Distance')
+#    plt.show()
 
     cv2.imwrite("%s_clean.png"%outfile, image)
     print "cleaned"
